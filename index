@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laimės Ratas</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #wheel {
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 5px solid black;
+        }
+        .slice {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            transform-origin: 100% 50%;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+        #pointer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 40px solid black;
+        }
+        #controls {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="wheel">
+        <div id="pointer"></div>
+    </div>
+    <div id="controls">
+        <button onclick="startRotation()">Start</button>
+        <button onclick="openSettings()">Settings</button>
+    </div>
+
+    <div id="settingsModal" style="display: none;">
+        <div>
+            <label for="header">Antraštė: </label>
+            <input type="text" id="header" name="header">
+        </div>
+        <div>
+            <label for="background">Background: </label>
+            <input type="file" id="background" name="background" accept="image/*" onchange="previewBackground(event)">
+        </div>
+        <div id="slices"></div>
+        <button onclick="saveSettings()">Save</button>
+    </div>
+
+    <script>
+        const slices = [
+            { text: 'Skiltis 1', color: 'red' },
+            { text: 'Skiltis 2', color: 'orange' },
+            { text: 'Skiltis 3', color: 'yellow' },
+            { text: 'Skiltis 4', color: 'green' },
+            { text: 'Skiltis 5', color: 'blue' },
+            { text: 'Skiltis 6', color: 'indigo' },
+            { text: 'Skiltis 7', color: 'violet' },
+            { text: 'Skiltis 8', color: 'pink' }
+        ];
+
+        const wheel = document.getElementById('wheel');
+        const pointer = document.getElementById('pointer');
+        const settingsModal = document.getElementById('settingsModal');
+        const slicesContainer = document.getElementById('slices');
+
+        let rotating = false;
+
+        function createWheel() {
+            wheel.innerHTML = '';
+            const sliceAngle = 360 / slices.length;
+            slices.forEach((slice, index) => {
+                const sliceDiv = document.createElement('div');
+                sliceDiv.classList.add('slice');
+                sliceDiv.style.backgroundColor = slice.color;
+                sliceDiv.style.transform = `rotate(${index * sliceAngle}deg)`;
+                const text = document.createElement('div');
+                text.style.transform = `rotate(${sliceAngle / 2}deg) translateX(100%) translateY(-50%)`;
+                text.style.transformOrigin = '0 50%';
+                text.textContent = slice.text;
+                sliceDiv.appendChild(text);
+                wheel.appendChild(sliceDiv);
+            });
+            wheel.appendChild(pointer);
+        }
+
+        function startRotation() {
+            if (rotating) return;
+            rotating = true;
+            let angle = 0;
+            const totalRotation = 360 * 3 + Math.floor(Math.random() * 360);
+            const interval = setInterval(() => {
+                angle += 10;
+                wheel.style.transform = `rotate(${angle}deg)`;
+                if (angle >= totalRotation) {
+                    clearInterval(interval);
+                    rotating = false;
+                    const winningSliceIndex = Math.floor(((totalRotation % 360) / 360) * slices.length);
+                    alert(`Ratas sustojo ties: ${slices[winningSliceIndex].text}`);
+                }
+            }, 20);
+        }
+
+        function openSettings() {
+            settingsModal.style.display = 'block';
+            slicesContainer.innerHTML = '';
+            slices.forEach((slice, index) => {
+                const sliceDiv = document.createElement('div');
+                const label = document.createElement('label');
+                label.textContent = `Skiltis ${index + 1}: `;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = slice.text;
+                input.oninput = (event) => slice.text = event.target.value;
+                const colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.value = slice.color;
+                colorInput.oninput = (event) => slice.color = event.target.value;
+                sliceDiv.appendChild(label);
+                sliceDiv.appendChild(input);
+                sliceDiv.appendChild(colorInput);
+                slicesContainer.appendChild(sliceDiv);
+            });
+        }
+
+        function saveSettings() {
+            const header = document.getElementById('header').value;
+            document.title = header;
+            createWheel();
+            settingsModal.style.display = 'none';
+        }
+
+        function previewBackground(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                wheel.style.backgroundImage = `url(${e.target.result})`;
+                wheel.style.backgroundSize = 'cover';
+            }
+            reader.readAsDataURL(file);
+        }
+
+        createWheel();
+    </script>
+</body>
+</html>
